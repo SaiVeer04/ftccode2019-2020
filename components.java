@@ -12,7 +12,7 @@ public class components {
     // we use customary because we cool like that
     //all holding values
     static final double wheel_diameter = 4.0;
-    static final double gear_ratio = 1.0;
+    static final double gear_ratio = .5;
     //for encoders
     static final double ticks = 1120;
     static final double ticks_per_inch = (ticks * gear_ratio)/(wheel_diameter * Math.PI);
@@ -135,7 +135,15 @@ public class components {
     }
 
     public void turn(double leftinch, double rightinch, double power){
+        int finalleft = (int)Math.round(leftinch*ticks_per_inch);
+        int finalright = (int)Math.round(rightinch*ticks_per_inch);
 
+        reset_motor();
+        fl.setTargetPosition(finalleft);
+        bl.setTargetPosition(finalleft);
+        fr.setTargetPosition(finalright);
+        br.setTargetPosition(finalright);
+        powerBusy(power);
 
     }
 
