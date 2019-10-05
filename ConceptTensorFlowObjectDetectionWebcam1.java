@@ -35,6 +35,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -60,11 +61,12 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
     private static final String LABEL_FIRST_ELEMENT = "Stone";
     private static final String LABEL_SECOND_ELEMENT = "Skystone";
 
+
     static final double wheel_diameter = 4.0;
     static final double gear_ratio = .5;
     //for encoders
     static final double ticks = 1120;
-    static final double ticks_per_inch = (ticks * gear_ratio)/(wheel_diameter * Math.PI);
+    static final double ticks_per_inch = (ticks * gear_ratio) / (wheel_diameter * Math.PI);
 
     DcMotor FR = null; //declaration of motors
     DcMotor FL = null;
@@ -72,6 +74,9 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
     DcMotor BL = null;
 
 
+    // Servo test = hardwareMap.get(Servo.class, "test"); //used to grab the servo
+    Servo paddle = hardwareMap.get(Servo.class, "paddle");
+    Servo drag = hardwareMap.get(Servo.class, "drag");
 
 
     /*
@@ -102,7 +107,6 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
     private TFObjectDetector tfod;
 
 
-
     @Override
     public void runOpMode() {
         FR = hardwareMap.get(DcMotor.class, "FR"); //initilization
@@ -121,12 +125,20 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
         BR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         BL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        //prevents motor FRom moving in init phase
+        //prevents motor from moving in init phase
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        //get the foundation
+        strafeleft(30, .5); //move to foundation
+
+        drag.setPosition(1); //moves drag servo down, to grab foundation
+        straferight(30, -0.5); // move back to start pos
+        drag.setPosition(0); //release foundation
+        forward(126, -0.5); //move to the first stone
+        strafeleft(10, .5); //used to move to first stone
 
         // The TFObjectDetector uses the camera FRames FRom the VuforiaLocalizer, so we create that
         // first.
@@ -159,67 +171,94 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
                     // the last time that call was made.
                     List<Recognition> updatedRecognitions = tfod.getUpdatedRecognitions();
                     if (updatedRecognitions != null) {
-                      telemetry.addData("# Object Detected", updatedRecognitions.size());
-                      // step through the list of recognitions and display boundary info.
-                      int i = 0;
-                      for (Recognition recognition : updatedRecognitions) {
-                        telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
-                        telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
-                                recognition.getLeft(), recognition.getTop());
-                        telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
-                                recognition.getRight(), recognition.getBottom());
+                        telemetry.addData("# Object Detected", updatedRecognitions.size());
+                        // step through the list of recognitions and display boundary info.
+                        int i = 0;
+                        for (Recognition recognition : updatedRecognitions) {
+                            telemetry.addData(String.format("label (%d)", i), recognition.getLabel());
+                            telemetry.addData(String.format("  left,top (%d)", i), "%.03f , %.03f",
+                                    recognition.getLeft(), recognition.getTop());
+                            telemetry.addData(String.format("  right,bottom (%d)", i), "%.03f , %.03f",
+                                    recognition.getRight(), recognition.getBottom());
 
 
-                        strafeleft(20,0.5);
-
-                        if (recognition.getLabel() == "Skystone") {
-                            int firstStrafe = 20;
+                            if (recognition.getLabel() == "Skystone") {
+                                int firstforward = 126;
 
 
-                            //pick it up
-                            straferight(firstStrafe, 0.5); //move stone to the end
-                            strafeleft(firstStrafe-24, 0.5); //move to second one
-                            //pick it up
-                            straferight(firstStrafe-24, 0.5); //move to the end
-                            break;
+                                //pick it up
+                                pickup(1); //pick up skystone
+                                sleep(100);
+                                forward(firstforward, 0.5); //move stone to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                forward(firstforward - 24, -0.5); //move to second one
+                                sleep(100);
+                                //pick it up
+                                pickup(1); //pick up second skystone
+                                sleep(100);
+                                forward(firstforward - 24, 0.5); //move to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                break;
+
+                            } else {
+                                forward(8, -0.5);
+                            }
+
+
+                            if (recognition.getLabel() == "Skystone") {
+                                int firstforward = 118;
+
+                                //pick it up
+                                pickup(1); //pick up skystone
+                                sleep(100);
+                                forward(firstforward, 0.5); //move stone to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                forward(firstforward - 24, -0.5); //move to second one
+                                sleep(100);
+                                //pick it up
+                                pickup(1); //pick up second skystone
+                                sleep(100);
+                                forward(firstforward - 24, 0.5); //move to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                break;
+                            } else {
+                                forward(8, -0.5);
+                            }
+
+
+                            if (recognition.getLabel() == "Skystone") {
+                                int firstforward = 110;
+
+                                //pick it up
+                                pickup(1); //pick up skystone
+                                sleep(100);
+                                forward(firstforward, 0.5); //move stone to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                forward(firstforward - 24, -0.5); //move to second one
+                                sleep(100);
+                                //pick it up
+                                pickup(1); //pick up second skystone
+                                sleep(100);
+                                forward(firstforward - 24, 0.5); //move to the end
+                                sleep(100);
+                                pickup(0); //release the servo
+                                sleep(100);
+                                break;
+                            }
+
 
                         }
-                        else {
-                            straferight(8, 0.5);
-                        }
-
-
-                        if (recognition.getLabel() == "Skystone") {
-                            int firstStrafe = 15;
-
-                            //pick it up
-                            straferight(firstStrafe, 0.5); //move stone to the end
-                            strafeleft(firstStrafe-24, 0.5); //move to second one
-                            //pick it up
-                            straferight(firstStrafe-24, 0.5);
-                            break;
-                        }
-                        else {
-                            straferight(8, 0.5);
-                        }
-
-
-                        if (recognition.getLabel() == "Skystone") {
-                            int firstStrafe = 10;
-
-                            //pick it up
-                            straferight(firstStrafe, 0.5); //move stone to the end
-                            strafeleft(firstStrafe-24, 0.5); //move to second one
-                            //pick it up
-                            straferight(firstStrafe-24, 0.5);
-                            break;
-                          }
-
-
-
-
-                      }
-                      telemetry.update();
+                        telemetry.update();
 
 
                     }
@@ -255,14 +294,14 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
      */
     public void initTfod() {
         int tfodMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
-            "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+                "tfodMonitorViewId", "id", hardwareMap.appContext.getPackageName());
         TFObjectDetector.Parameters tfodParameters = new TFObjectDetector.Parameters(tfodMonitorViewId);
-       tfodParameters.minimumConfidence = 0.8;
-       tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
-       tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
+        tfodParameters.minimumConfidence = 0.8;
+        tfod = ClassFactory.getInstance().createTFObjectDetector(tfodParameters, vuforia);
+        tfod.loadModelFromAsset(TFOD_MODEL_ASSET, LABEL_FIRST_ELEMENT, LABEL_SECOND_ELEMENT);
     }
 
-    public void reset_motor(){
+    public void reset_motor() {
         //resets encoders
         FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -281,14 +320,16 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
         FR.setPower(power);
         BL.setPower(power);
         BR.setPower(power);
-        while ((FL.isBusy() && FR.isBusy())&&(BL.isBusy() && BR.isBusy())){}
+        while ((FL.isBusy() && FR.isBusy()) && (BL.isBusy() && BR.isBusy())) {
+        }
         FL.setPower(0);
         FR.setPower(0);
         BL.setPower(0);
         BR.setPower(0);
     }
-    public void forward(double front,double power){
-        int final_front = (int)Math.round(front*ticks_per_inch);
+
+    public void forward(double front, double power) {
+        int final_front = (int) Math.round(front * ticks_per_inch);
 
         reset_motor();
         FL.setTargetPosition(final_front);
@@ -298,9 +339,10 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
         powerBusy(power);
 
     }
-    public void backwards(double back,double power){
 
-        int final_back = (int)Math.round(back*ticks_per_inch);
+    public void backwards(double back, double power) {
+
+        int final_back = (int) Math.round(back * ticks_per_inch);
 
         reset_motor();
         FL.setTargetPosition(-final_back);
@@ -310,9 +352,10 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
         powerBusy(power);
 
     }
-    public void strafeleft(double back,double power){
 
-        int final_back = (int)Math.round(back*ticks_per_inch);
+    public void strafeleft(double back, double power) {
+
+        int final_back = (int) Math.round(back * ticks_per_inch);
 
         reset_motor();
         FL.setTargetPosition(final_back);
@@ -322,9 +365,10 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
         powerBusy(power);
 
     }
-    public void straferight(double back,double power){
 
-        int final_back = (int)Math.round(back*ticks_per_inch);
+    public void straferight(double back, double power) {
+
+        int final_back = (int) Math.round(back * ticks_per_inch);
 
         reset_motor();
         FL.setTargetPosition(-final_back);
@@ -335,9 +379,9 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
 
     }
 
-    public void turn(double leftinch, double rightinch, double power){
-        int finalleft = (int)Math.round(leftinch*ticks_per_inch);
-        int finalright = (int)Math.round(rightinch*ticks_per_inch);
+    public void turn(double leftinch, double rightinch, double power) {
+        int finalleft = (int) Math.round(leftinch * ticks_per_inch);
+        int finalright = (int) Math.round(rightinch * ticks_per_inch);
 
         reset_motor();
         FL.setTargetPosition(finalleft);
@@ -348,8 +392,19 @@ public class ConceptTensorFlowObjectDetectionWebcam1 extends LinearOpMode {
 
     }
 
-
+    public void pickup(double position) {
+        drag.setPosition(position);
     }
+
+
+    public void sleep(int mills) {
+        try {
+            Thread.sleep(mills);
+        } catch (Exception e) {
+
+        }
+    }
+}
 
 
 
