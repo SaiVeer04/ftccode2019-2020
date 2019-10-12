@@ -7,12 +7,12 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-public class components {
+public class components{
 
     // we use customary because we cool like that
     //all holding values
     static final double wheel_diameter = 4.0;
-    static final double gear_ratio = .5;
+    static final double gear_ratio = 2.0;
     //for encoders
     static final double ticks = 1120;
     static final double ticks_per_inch = (ticks * gear_ratio)/(wheel_diameter * Math.PI);
@@ -26,8 +26,8 @@ public class components {
     public DcMotor fl;
     //back left
     public DcMotor bl;
-    //inertial measurement unit
-    public BNO055IMU imu;
+
+
 
 
 
@@ -35,10 +35,11 @@ public class components {
 
 
     public void init(HardwareMap hwMap){
-        fr = hwMap.dcMotor.get("fr");
-        fl = hwMap.dcMotor.get("fl");
-        br = hwMap.dcMotor.get("br");
-        bl = hwMap.dcMotor.get("bl");
+        //init
+        fr = hwMap.dcMotor.get("FR");
+        fl = hwMap.dcMotor.get("FL");
+        br = hwMap.dcMotor.get("BR");
+        bl = hwMap.dcMotor.get("BL");
 
 
 
@@ -60,7 +61,7 @@ public class components {
 
 
     }
-
+    //methods are pretty self explanatory
     public void reset_motor(){
         //resets encoders
         fl.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -73,7 +74,7 @@ public class components {
         br.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         bl.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
-
+    //this one lets each movement run to the full extent with out overriding
     public void powerBusy(double power) {
         //lets program run fully
         fl.setPower(power);
@@ -114,10 +115,10 @@ public class components {
         int final_back = (int)Math.round(back*ticks_per_inch);
 
         reset_motor();
-        fl.setTargetPosition(final_back);
-        bl.setTargetPosition(-final_back);
-        fr.setTargetPosition(-final_back);
-        br.setTargetPosition(final_back);
+        fl.setTargetPosition(-final_back);
+        bl.setTargetPosition(final_back);
+        fr.setTargetPosition(final_back);
+        br.setTargetPosition(-final_back);
         powerBusy(power);
 
     }
@@ -126,24 +127,37 @@ public class components {
         int final_back = (int)Math.round(back*ticks_per_inch);
 
         reset_motor();
-        fl.setTargetPosition(-final_back);
-        bl.setTargetPosition(final_back);
-        fr.setTargetPosition(final_back);
-        br.setTargetPosition(-final_back);
+        fl.setTargetPosition(final_back);
+        bl.setTargetPosition(-final_back);
+        fr.setTargetPosition(-final_back);
+        br.setTargetPosition(final_back);
         powerBusy(power);
 
     }
 
-    public void turn(double leftinch, double rightinch, double power){
-        int finalleft = (int)Math.round(leftinch*ticks_per_inch);
-        int finalright = (int)Math.round(rightinch*ticks_per_inch);
+    public void turn(double degrees,String l_or_r,double power){
+        if(l_or_r.equals("l")){
+            int leftvalue = (int)((degrees/360)* 1120);
 
-        reset_motor();
-        fl.setTargetPosition(finalleft);
-        bl.setTargetPosition(finalleft);
-        fr.setTargetPosition(finalright);
-        br.setTargetPosition(finalright);
-        powerBusy(power);
+            fl.setTargetPosition(leftvalue);
+            bl.setTargetPosition(leftvalue);
+            fr.setTargetPosition(-leftvalue);
+            br.setTargetPosition(-leftvalue);
+
+
+        }else if(l_or_r.equals("r")){
+            int leftvalue = (int)((degrees/360)* 1120);
+
+            fl.setTargetPosition(-leftvalue);
+            bl.setTargetPosition(-leftvalue);
+            fr.setTargetPosition(leftvalue);
+            br.setTargetPosition(leftvalue);
+
+
+        }
+
+
+
 
     }
 
