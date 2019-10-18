@@ -36,6 +36,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.ClassFactory;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -62,6 +63,13 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
     private static final String LABEL_FIRST_ELEMENT = "Stone";
     private static final String LABEL_SECOND_ELEMENT = "Skystone";
 
+    static final double     COUNTS_PER_MOTOR_REV    = 1120 ;    // eg: TETRIX Motor Encoder
+    static final double     DRIVE_GEAR_REDUCTION    = 2.0 ;     // This is < 1.0 if geared UP
+    static final double     WHEEL_DIAMETER_INCHES   = 4.0 ;     // For figuring circumference
+    static final double     COUNTS_PER_INCH         = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
+            (WHEEL_DIAMETER_INCHES * 3.1415);
+
+
     static final double wheel_diameter = 4.0;
     static final double gear_ratio = .5;
     //for encoders
@@ -74,6 +82,7 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
     DcMotor BL = null;
     //Servo paddle;
     Servo drag;
+    public ElapsedTime runtime = new ElapsedTime();
 
 
     //Servo test;
@@ -120,6 +129,11 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
         FL.setDirection(DcMotorSimple.Direction.REVERSE); //set left side motors to opposite so that the robot moves
         BL.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
 
         //required to tell using encoder
         FL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -127,11 +141,7 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
         BR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         BL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        //prevents motor from moving in init phase
-        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
         // The TFObjectDetector uses the camera frames from the VuforiaLocalizer, so we create that
         // first.
         initVuforia();
@@ -158,10 +168,11 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
         if (opModeIsActive()) {
             while (opModeIsActive()) {
                 //get the foundation
-                c.strafeleft(30, .5); //move to foundation
+                move(-30,30,30,-30); //move to foundation
 
                 drag.setPosition(1); //moves drag servo down, to grab foundation
-                c.straferight(29.5, -0.5); // move back to start pos
+               //c.straferight(29.5, -0.5); // move back to start pos
+                move(30,-30,-30,30);
                 drag.setPosition(0); //release foundation
                 c.forward(126, -0.5); //move to the first stone
                 c.strafeleft(10, .5); //used to move to first stone
@@ -306,5 +317,50 @@ public class ConceptTensorFlowObjectDetectionWebcam2 extends LinearOpMode {
         } catch (Exception e) {
 
         }
+    }
+
+    public void move(int fl, int bl, int fr, int br) {
+        int newFLTarget = FL.getCurrentPosition() + (int)(fl * COUNTS_PER_INCH);
+        int newBLTarget = BL.getCurrentPosition() + (int)(bl * COUNTS_PER_INCH);
+        int newBRTarget = BR.getCurrentPosition() + (int)(br * COUNTS_PER_INCH);
+        int newFRTarget = FR.getCurrentPosition() + (int)(fr * COUNTS_PER_INCH);
+
+
+        FL.setTargetPosition(newFLTarget); //sets the distance of the motor
+        FR.setTargetPosition(newFRTarget); //sets the distance of the motor
+        BR.setTargetPosition(newBRTarget); //sets the distance of the motor
+        BL.setTargetPosition(newBLTarget); //sets the distance of the motor
+
+        FL.setMode(DcMotor.RunMode.RUN_TO_POSITION); //tells the motor to go the distance of the encoder
+        FR.setMode(DcMotor.RunMode.RUN_TO_POSITION); //tells the motor to go the distance of the encoder
+        BR.setMode(DcMotor.RunMode.RUN_TO_POSITION); //tells the motor to go the distance of the encoder
+        BL.setMode(DcMotor.RunMode.RUN_TO_POSITION); //tells the motor to go the distance of the encoder
+
+        runtime.reset();
+        // Stop all motion;
+        FL.setPower(0.3);
+        FR.setPower(0.3);
+        BR.setPower(0.3);
+        BL.setPower(0.3); //speed of the motor
+
+        while (opModeIsActive() && //use this method to prevent skipping of encoders
+                FL.isBusy()) {
+
+
+        }
+
+        // Stop all motion;
+        FL.setPower(0);
+        FR.setPower(0);
+        BR.setPower(0);
+        BL.setPower(0);
+
+        // Turn off RUN_TO_POSITION
+        FL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        FR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
     }
 }
